@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medicine Management System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .container {
+      width: 80%;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #007bff;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0 5px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+    }
+
+    #loginPage {
+      display: block;
+    }
+    #mainPage {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Medicine Management System
+  </header>
+
+  <!-- Login Page -->
+  <div class="container" id="loginPage">
+    <h2>Login</h2>
+    <label for="username">Username:</label>
+    <input type="text" id="username" required>
+    <label for="password">Password:</label>
+    <input type="password" id="password" required>
+    <button onclick="login()">Login</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <!-- Main Page -->
+  <div class="container" id="mainPage">
+    <h2>Add Medicine</h2>
+    <form id="medicineForm">
+      <label for="name">Medicine Name:</label>
+      <input type="text" id="name" required>
+
+      <label for="hospital">Hospital:</label>
+      <input type="text" id="hospital" required>
+
+      <label for="mfg">Manufacture Date:</label>
+      <input type="date" id="mfg" required>
+
+      <label for="exp">Expiry Date:</label>
+      <input type="date" id="exp" required>
+
+      <label for="quantity">Quantity (Tablets):</label>
+      <input type="number" id="quantity" required>
+
+      <button type="submit">Add Medicine</button>
+    </form>
+
+    <h2>Search Medicine</h2>
+    <label for="searchName">Medicine Name:</label>
+    <input type="text" id="searchName" placeholder="Enter medicine name">
+    <button onclick="searchMedicine()">Search</button>
+
+    <h2>Medicine List</h2>
+    <p id="message" style="color:blue;"></p>
+    <table id="medicineTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Hospital</th>
+          <th>Manufacture Date</th>
+          <th>Expiry Date</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let medicines = JSON.parse(localStorage.getItem("medicines")) || [];
+    let currentUser = null;
+
+    function renderTable(list) {
+      const tbody = document.querySelector("#medicineTable tbody");
+      tbody.innerHTML = "";
+      if (list.length === 0) {
+        document.getElementById("message").innerText = 
+          "Sorry, try next time or search another medicine if necessary.";
+      } else {
+        document.getElementById("message").innerText = 
+          "Medicine(s) found. Login was successful!";
+        list.forEach(med => {
+          let row = `<tr>
+            <td>${med.name}</td>
+            <td>${med.hospital}</td>
+            <td>${med.mfg}</td>
+            <td>${med.exp}</td>
+            <td>${med.quantity}</td>
+          </tr>`;
+          tbody.innerHTML += row;
+        });
+      }
+    }
+
+    document.getElementById("medicineForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      let name = document.getElementById("name").value;
+      let hospital = document.getElementById("hospital").value;
+      let mfg = document.getElementById("mfg").value;
+      let exp = document.getElementById("exp").value;
+      let quantity = document.getElementById("quantity").value;
+
+      medicines.push({ name, hospital, mfg, exp, quantity });
+      localStorage.setItem("medicines", JSON.stringify(medicines));
+
+      renderTable(medicines);
+      this.reset();
+    });
+
+    function searchMedicine() {
+      let medName = document.getElementById("searchName").value.toLowerCase();
+      let filtered = medicines.filter(m => m.name.toLowerCase() === medName);
+
+      if (currentUser.role === "hospital") {
+        filtered = filtered.filter(m => m.hospital.toLowerCase() === currentUser.hospital.toLowerCase());
+      }
+
+      renderTable(filtered);
+    }
+
+    function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if (username === "admin" && password === "1234") {
+        currentUser = { role: "admin" };
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+        renderTable(medicines);
+      } else if (username === "hospital" && password === "1111") {
+        let hospitalName = prompt("Enter your hospital name:");
+        currentUser = { role: "hospital", hospital: hospitalName };
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+        renderTable(medicines.filter(m => m.hospital.toLowerCase() === hospitalName.toLowerCase()));
+      } else {
+        document.getElementById("loginError").innerText = "Invalid credentials!";
+      }
+    }
+  </script>
+</body>
+</html>
